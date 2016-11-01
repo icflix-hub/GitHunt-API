@@ -18,6 +18,13 @@ import { SubscriptionServer } from 'subscriptions-transport-ws';
 import { subscriptionManager } from './subscriptions';
 
 import schema from './schema';
+import OpticsAgent from 'optics-agent';
+
+OpticsAgent.configureAgent({
+  apiKey: 'service:ic-test:pLTwQ_uR1MsTKaGY-ALLrQ',
+  printReports: true
+});
+OpticsAgent.instrumentSchema(schema);
 
 let PORT = 3010;
 if (process.env.PORT) {
@@ -33,6 +40,7 @@ app.use(bodyParser.json());
 
 setUpGitHubLogin(app);
 
+app.use('/graphql', OpticsAgent.middleware());
 app.use('/graphql', apolloExpress((req) => {
   // Get the query, the same way express-graphql does it
   // https://github.com/graphql/express-graphql/blob/3fa6e68582d6d933d37fa9e841da5d2aa39261cd/src/index.js#L257
@@ -70,6 +78,7 @@ app.use('/graphql', apolloExpress((req) => {
       Users: new Users({ connector: gitHubConnector }),
       Entries: new Entries(),
       Comments: new Comments(),
+      opticsContext: OpticsAgent.context(req),
     },
   };
 }));
@@ -125,7 +134,7 @@ new SubscriptionServer(
           Repositories: new Repositories({ connector: gitHubConnector }),
           Users: new Users({ connector: gitHubConnector }),
           Entries: new Entries(),
-          Comments: new Comments(),
+          Comments: new Comments()
         },
       });
     },
